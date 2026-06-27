@@ -18,6 +18,7 @@
     --rose-deep: #C2526E;
     --gold: #D9A066;
     --stamp: #C73B53;
+    --good: #5E9468;
     --line: rgba(74,46,53,0.12);
     --cream: #FFF8F3;
     --radius: 18px;
@@ -125,6 +126,26 @@
     border: 1px solid var(--line);
   }
   .btn-ghost:hover{ border-color: var(--rose-deep); color: var(--rose-deep); }
+  .btn-good{
+    background: linear-gradient(135deg, #F6D9B6, var(--good));
+    color: var(--cream);
+    box-shadow: 0 8px 24px rgba(94,148,104,0.3);
+  }
+
+  /* ---------- Good girl video modal ---------- */
+  .stamp-good{ color: var(--good); border-color: var(--good); }
+  .video-frame{
+    position: relative; margin: 6px 0 18px; border-radius: 10px; overflow: hidden;
+    background: #1c1410; aspect-ratio: 16/10;
+  }
+  .video-frame video{ width:100%; height:100%; display:block; object-fit: cover; background:#000; }
+  .video-placeholder{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    background: linear-gradient(160deg, #FBE3D4, #F6D2C9); color: var(--ink); padding: 16px; text-align:center;
+  }
+  .video-placeholder .pawemoji{ font-size: 1.8rem; }
+  .video-placeholder p{ font-size: 0.78rem; margin: 0; color: var(--muted); line-height: 1.5; }
+  .video-placeholder code{ background: rgba(74,46,53,0.08); padding: 2px 6px; border-radius: 4px; font-family: var(--mono); }
 
   /* ---------- Stats ---------- */
   .stats{
@@ -282,6 +303,7 @@
     </div>
     <div class="hero-actions">
       <button class="btn btn-primary" id="subscribeBtn">Subscribe to Unlock 🔒</button>
+      <button class="btn btn-good" id="bellyRubBtn">Give a Belly Rub 🤲</button>
       <a class="btn btn-ghost" href="#gallery">See preview</a>
     </div>
   </header>
@@ -365,6 +387,24 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="goodGirlBackdrop">
+  <div class="citation" role="alertdialog" aria-modal="true" aria-labelledby="goodGirlTitle">
+    <div class="case-no">CASE NO. WOOF-0002</div>
+    <div class="stamp stamp-good" id="goodGirlTitle">GOOD GIRL!</div>
+    <div class="video-frame">
+      <video id="goodGirlVideo" controls playsinline preload="none" poster="videos/good-girl-poster.jpg">
+        <source src="videos/good-girl.mp4" type="video/mp4">
+      </video>
+      <div class="video-placeholder" id="goodGirlPlaceholder">
+        <span class="pawemoji">🐾</span>
+        <p>Drop a clip at <code>videos/good-girl.mp4</code><br>(and optionally <code>videos/good-girl-poster.jpg</code>) to play it here.</p>
+      </div>
+    </div>
+    <p>Belle accepts your belly rub. This is the correct way to interact with this website.</p>
+    <button class="btn btn-good" id="goodGirlClose">Aww, good girl</button>
+  </div>
+</div>
+
 <script>
   // ---------- Bark sound (synthesized, no external audio file needed) ----------
   function playBark(){
@@ -402,13 +442,63 @@
     }
   }
 
+  // ---------- Good girl chime (synthesized) ----------
+  function playGoodGirlChime(){
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      function note(freq, startTime, dur){
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + dur + 0.02);
+      }
+      const now = ctx.currentTime;
+      note(523.25, now, 0.16);
+      note(659.25, now + 0.14, 0.22);
+    }catch(e){ /* Web Audio unsupported — fail silently */ }
+  }
+
+  const goodGirlBackdrop = document.getElementById('goodGirlBackdrop');
+  const goodGirlVideo = document.getElementById('goodGirlVideo');
+  const goodGirlPlaceholder = document.getElementById('goodGirlPlaceholder');
+
+  function closeGoodGirl(){
+    goodGirlBackdrop.classList.remove('open');
+    goodGirlVideo.pause();
+  }
+
+  document.getElementById('bellyRubBtn').addEventListener('click', ()=>{
+    playGoodGirlChime();
+    goodGirlBackdrop.classList.add('open');
+    goodGirlVideo.currentTime = 0;
+    goodGirlVideo.play().catch(()=>{ /* needs a user gesture or file is missing — fine either way */ });
+  });
+  goodGirlVideo.addEventListener('error', ()=>{
+    goodGirlVideo.style.display = 'none';
+    goodGirlPlaceholder.style.display = 'flex';
+  });
+  document.getElementById('goodGirlClose').addEventListener('click', closeGoodGirl);
+  goodGirlBackdrop.addEventListener('click', (e)=>{ if(e.target === goodGirlBackdrop) closeGoodGirl(); });
+
   document.getElementById('subscribeBtn').addEventListener('click', naughtyPuppy);
   document.querySelectorAll('[data-tile]').forEach(el => el.addEventListener('click', naughtyPuppy));
   document.querySelectorAll('[data-tip]').forEach(el => el.addEventListener('click', naughtyPuppy));
 
   document.getElementById('modalClose').addEventListener('click', ()=> backdrop.classList.remove('open'));
   backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) backdrop.classList.remove('open'); });
-  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') backdrop.classList.remove('open'); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      backdrop.classList.remove('open');
+      closeGoodGirl();
+    }
+  });
 
   // ---------- Stat counters ----------
   function animateCount(el){
