@@ -476,8 +476,10 @@
 
   document.getElementById('bellyRubBtn').addEventListener('click', ()=>{
     playGoodGirlChime();
+    goodGirlVideo.style.display = 'block';
+    goodGirlPlaceholder.style.display = 'none';
     goodGirlBackdrop.classList.add('open');
-    goodGirlVideo.currentTime = 0;
+    goodGirlVideo.load();
     goodGirlVideo.play().catch(()=>{ /* needs a user gesture or file is missing — fine either way */ });
   });
   goodGirlVideo.addEventListener('error', ()=>{
